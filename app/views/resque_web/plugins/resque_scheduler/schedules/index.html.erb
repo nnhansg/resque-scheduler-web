@@ -1,51 +1,66 @@
+<%
+  index = 0
+%>
 <h1>Schedule</h1>
 
 <p class='intro'>
   The list below contains all scheduled jobs. Click &quot;Queue now&quot; to
   queue a job immediately.
-  Server local time: <%= Time.now %>
-  Current master: <%= Resque.redis.get(Resque::Scheduler.master_lock.key) %>
+  <br/> Server local time: <%= Time.now %>
+  <br/> Server Environment: <%= Resque::Scheduler.env %>
+  <br/> Current master: <%= Resque.redis.get(Resque::Scheduler.master_lock.key) %>
 </p>
-<div style="overflow-y: auto; width:100%; padding: 0px 5px;">
-  <table class="table table-bordered">
-    <tr>
-      <% if Resque::Scheduler.dynamic %>
-        <th></th>
-      <% end %>
-      <th></th>
-      <th>Name</th>
-      <th>Description</th>
-      <th>Interval</th>
-      <th>Class</th>
-      <th>Queue</th>
-      <th>Arguments</th>
-      <th>Last Enqueued</th>
-    </tr>
-    <% @scheduled_jobs.each do |job_name, job_config| %>
-      <tr class="job" id="job_<%= job_name %>">
-        <% if Resque::Scheduler.dynamic %>
-          <td class="delete-job-button-cell" style="padding-top: 12px; padding-bottom: 2px; width: 10px">
-            <form action="<%= schedule_path %>" method="post" style="margin-left: 0">
+<p class='intro'>
+  The highlighted jobs are skipped for current environment.
+</p>
+<div style="width:100%;">
+  <table id="resque-scheduler-schedules-table" class="table table-striped table-bordered table-hover table-responsive">
+    <thead>
+      <tr>
+        <th>Index</th>
+        <th>Name</th>
+        <th>Interval</th>
+        <th>Last Enqueued</th>
+        <th>Class</th>
+        <th>Queue</th>
+        <th>Arguments</th>
+        <th>Description</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @scheduled_jobs.each do |job_name, job_config| %>
+        <tr class="job" id="job_<%= job_name %>">
+          <td  class="text-right" style="padding-left: 15px;"><%= index + 1 %></td>
+          <td><%= h job_name %></td>
+          <td style="white-space:nowrap"><%= h schedule_interval(job_config) %></td>
+          <td><%= h Resque.get_last_enqueued_at(job_name) || 'Never' %></td>
+          <td><%= h schedule_class(job_config) %></td>
+          <td><%= h job_config['queue'] || queue_from_class_name(job_config['class']) %></td>
+          <td>
+            <button type="button" class="btn btn-default" data-container="body" data-toggle="popover" data-placement="right"
+              data-html="true" data-container="body"
+              data-content="<div style='word-wrap: break-word;'><%= h job_config['args'].inspect %></div>">
+              View details
+            </button>
+          </td>
+          <td><%= h job_config['description'] %></td>
+          <td style="padding-top: 12px; padding-bottom: 2px; width: 10px">
+          <% if Resque::Scheduler.dynamic %>
+            <form action="<%= schedule_path %>" method="post" style="margin-left: 0; display: inline-block; float: none;">
               <input type="hidden" name="job_name" value="<%= h job_name %>">
               <input type="hidden" name="_method" value="delete">
-              <input type="submit" value="Delete" class="delete-button">
+              <input type="submit" value="Delete" class="delete-button btn btn-danger">
             </form>
-          </td>
-        <% end %>
-        <td class="requeue-job-button-cell" style="padding-top: 12px; padding-bottom: 2px; width: 10px">
-          <form action="<%= requeue_path %>" method="post" style="margin-left: 0">
+          <% end %>
+
+          <form action="<%= requeue_path %>" method="post" style="margin-left: 0; display: inline-block; float: none;">
             <input type="hidden" name="job_name" value="<%= h job_name %>">
-            <input type="submit" value="Queue now" id="requeue_job_<%= job_name %>" class="btn btn-default">
+            <input type="submit" value="Queue now" id="requeue_job_<%= job_name %>" class="btn btn-info">
           </form>
-        </td>
-        <td><%= h job_name %></td>
-        <td><%= h job_config['description'] %></td>
-        <td style="white-space:nowrap"><%= h schedule_interval(job_config) %></td>
-        <td><%= h schedule_class(job_config) %></td>
-        <td><%= h job_config['queue'] || queue_from_class_name(job_config['class']) %></td>
-        <td><%= h job_config['args'].inspect %></td>
-        <td><%= h Resque.get_last_enqueued_at(job_name) || 'Never' %></td>
-      </tr>
-    <% end %>
+        </tr>
+        <% index += 1 %>
+      <% end %>
+    </tbody>
   </table>
 </div>

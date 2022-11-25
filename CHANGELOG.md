@@ -1,8 +1,7 @@
 # Changelog
 
 # 1.1.1
-* Minor update to bring gem versions up to date and remove security vulnerabilities
-* Fix showing delayed jobs (via InJung Chung)
+* Apply jQuery DataTable for Schedule grid.
 
 # 1.1.0
 * Require Ruby 2.2
